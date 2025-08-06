@@ -1,0 +1,154 @@
+import streamlit as st
+import pandas as pd
+from PIL import Image
+import re
+
+# --- CONFIG PAGE ET STYLE ---
+st.set_page_config(page_title="ERIBot - Ericsson", page_icon="🚱")
+
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #003399;
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    h1 {
+        color: #ff0000;
+        font-weight: bold;
+    }
+    textarea {
+        background-color: #e6f0ff;
+        color: #003399;
+        font-weight: 600;
+    }
+    input[type="text"] {
+        border: 2px solid #ff0000;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 16px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# --- LOGO ---
+logo = Image.open("ericsson_logo.png")
+st.image(logo, width=150)
+
+st.title("💬 ERIBot - Assistant Réseau Ericsson")
+st.write("Posez-moi une question sur un site radio 👇")
+
+df = pd.read_csv("sites_radio_nabeul.csv")
+
+# Nettoyage et conversion coordonnées
+df['LAT'] = df['LAT'].astype(str).str.replace(',', '.').astype(float)
+df['LONG'] = df['LONG'].astype(str).str.replace(',', '.').astype(float)
+
+# Récupérer la colonne du nom de site (2e colonne)
+site_col = df.columns[1]
+
+# --- EXTRACTION COORDONNEES AVEC REGEX ---
+def extraire_coordonnees(msg):
+    # Remplacer la virgule décimale dans les nombres par un point (ex: 36,847 -> 36.847)
+    msg_corrige = re.sub(r'(\d),(\d)', r'\1.\2', msg)
+    # Remplacer la virgule séparatrice entre latitude et longitude par un espace
+    msg_corrige = re.sub(r'(\d\.\d+),(\d)', r'\1 \2', msg_corrige)
+    
+    # Extraire tous les nombres décimaux (flottants)
+    match = re.findall(r'[-+]?\d*\.\d+|\d+', msg_corrige)
+    if len(match) >= 2:
+        try:
+            lat = float(match[0])
+            lon = float(match[1])
+            return lat, lon
+        except:
+            return None
+    return None
+
+
+
+def get_eribot_response(msg):
+    msg_lower = msg.lower()
+    msg_upper = msg.upper()
+
+    
+    # Recherche par nom de site
+    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+
+    if matched_sites:
+        site = matched_sites[0]
+        site_data = df[df[site_col] == site].iloc[0]
+
+        if "oss" in msg_lower or "id" in msg_lower:
+            return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
+
+        elif "radio type 4g" in msg_lower:
+            return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
+
+        elif "radio type 3g" in msg_lower:
+            return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
+
+        elif "gps" in msg_lower or "coordonnée" in msg_lower:
+            return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+
+        elif "latitude" in msg_lower or "lat" in msg_lower:
+            return f"La latitude du site {site} est : {site_data['LAT']}"
+
+        elif "longitude" in msg_lower or "long" in msg_lower:
+            return f"La longitude du site {site} est : {site_data['LONG']}"
+
+        else:
+            return (
+                f"Voici les infos disponibles pour le site {site} :\n"
+                f"- OSS ID : {site_data['4G OSS ID']}\n"
+                f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
+                f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
+                f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+            )
+
+    # Recherche inverse avec extraction coordonnées GPS
+    coords = extraire_coordonnees(msg)
+    st.write(f"Coordonnées extraites : {coords}")  # Debug extraction
+
+    if coords:
+        lat_val, long_val = coords
+        matched_rows = df[
+            ((df['LAT'] - lat_val).abs() < 0.01) &
+            ((df['LONG'] - long_val).abs() < 0.01)
+        ]
+        st.write(f"Lignes correspondantes : {matched_rows}")  # Debug résultat recherche
+        if not matched_rows.empty:
+            sites_found = matched_rows[site_col].tolist()
+            return f"Sites correspondant aux coordonnées LAT={lat_val}, LONG={long_val} : {', '.join(sites_found)}"
+
+    # Recherche dans autres colonnes
+    msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
+    tokens = msg_clean.split()
+
+    for col in ['4G OSS ID', 'Radio Type 4G', 'Radio Type 3G', 'LAT', 'LONG']:
+        for token in tokens:
+            if col in ['LAT', 'LONG']:
+                try:
+                    val = float(token)
+                    matched_rows = df[(df[col] - val).abs() < 0.0001]
+                except:
+                    continue
+            else:
+                matched_rows = df[df[col].astype(str).str.lower() == token]
+
+            if not matched_rows.empty:
+                sites_found = matched_rows[site_col].tolist()
+                return f"Les sites correspondants à la valeur '{token}' dans la colonne '{col}' sont : {', '.join(sites_found)}"
+
+    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
+
+
+# --- INTERFACE UTILISATEUR ---
+user_input = st.text_input("Votre question")
+
+if user_input:
+    response = get_eribot_response(user_input)
+    st.text_area("Réponse ERIBot :", value=response, height=250)
