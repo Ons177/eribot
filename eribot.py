@@ -15,17 +15,8 @@ st.markdown("""
     color: white !important;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
-
 /* TITRE */
-h1 {
-    color: #ffcc00 !important;
-    font-weight: bold !important;
-    text-align: center !important;
-    font-size: 2.5em !important;
-    margin-bottom: 20px !important;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
-}
-
+h1 { color: #ffcc00 !important; font-weight: bold !important; text-align: center !important; font-size: 2.5em !important; margin-bottom: 20px !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important; }
 /* INPUT USER */
 [data-testid="stTextInput"] input {
     border: 2px solid #ffcc00 !important;
@@ -37,13 +28,11 @@ h1 {
     font-weight: bold !important;
     transition: all 0.3s ease-in-out !important;
 }
-
 [data-testid="stTextInput"] input:focus {
     border-color: #00ccff !important;
     box-shadow: 0 0 10px #00ccff !important;
     outline: none !important;
 }
-
 /* BOUTONS */
 [data-testid="stButton"] button {
     background-color: #ffcc00 !important;
@@ -55,13 +44,11 @@ h1 {
     font-size: 16px !important;
     transition: all 0.3s ease-in-out !important;
 }
-
 [data-testid="stButton"] button:hover {
     background-color: #ffaa00 !important;
     color: white !important;
     transform: scale(1.05) !important;
 }
-
 /* CARD BOT */
 .bot-card {
     background: #e6f0ff !important;
@@ -108,22 +95,19 @@ def extraire_coordonnees(msg):
             return None
     return None
 
-# --- FONCTION ERIBOT ---
+# --- FONCTION DE RÉPONSE ---
 def get_eribot_response(msg):
     msg_upper = msg.upper()
     msg_lower = msg.lower()
 
-    # --- Liste de tous les sites ---
+    # --- Recherche par nom de site ---
     site_list = df[site_col].tolist()
-
-    # --- Recherche par texte : nom de site ---
     matched_sites = [site for site in site_list if site.upper() in msg_upper]
 
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
 
-        # Vérifier ce que l'utilisateur demande
         if any(k in msg_upper for k in ["3G", "TYPE RADIO 3G"]):
             return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
         elif any(k in msg_upper for k in ["4G", "TYPE RADIO 4G"]):
@@ -133,7 +117,6 @@ def get_eribot_response(msg):
         elif any(k in msg_upper for k in ["GPS", "COORDONNÉE", "LAT", "LONG", "COORDONNEES"]):
             return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
         else:
-            # Si aucune info spécifique demandée, donner tout
             return (
                 f"Voici les infos disponibles pour le site {site} :\n"
                 f"- OSS ID : {site_data['4G OSS ID']}\n"
@@ -142,11 +125,11 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-    # --- Recherche par coordonnées LAT + LONG ---
+    # --- Recherche par coordonnées ---
     coords = extraire_coordonnees(msg)
     if coords:
         lat_val, long_val = coords
-        tolerance = 1e-4  # Tolérance pour arrondis
+        tolerance = 1e-4
         matched_rows = df[
             ((df['LAT'] - lat_val).abs() < tolerance) &
             ((df['LONG'] - long_val).abs() < tolerance)
@@ -155,7 +138,6 @@ def get_eribot_response(msg):
             site = matched_rows[site_col].iloc[0]
             return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
         else:
-            # Si aucun site exact, proposer les 3 sites les plus proches
             df_temp = df.copy()
             df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_val) ** 2 + (df_temp["LONG"] - long_val) ** 2) ** 0.5
             closest = df_temp.nsmallest(3, "DISTANCE")
@@ -171,9 +153,7 @@ def get_eribot_response(msg):
         all_sites = df[site_col].tolist()
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-    # --- Si rien trouvé ---
-    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler?"
-
+    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
 
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
