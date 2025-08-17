@@ -86,9 +86,10 @@ def get_eribot_response(msg):
     nearest_keywords = ["plus proche", "site le plus proche", "nearest", "proche"]
 
     # 1) ----- Liste de tous les sites de Nabeul -----
-    if any(keyword in msg_lower for keyword in list_keywords):
-        all_sites = df[site_col].tolist()
-        return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
+   if any(keyword in msg_lower.replace("'", "").replace("’","") for keyword in list_keywords):
+    all_sites = df[site_col].tolist()
+    return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
+
 
     # 2) ----- Recherche du site le plus proche -----
     if any(keyword in msg_lower for keyword in nearest_keywords):
