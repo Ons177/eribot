@@ -37,10 +37,10 @@ st.markdown(
 # --- LOGO ---
 logo = Image.open("ericsson_logo.png")
 st.image(logo, width=150)
-
 st.title("💬 ERIBot - Assistant Réseau Ericsson")
 st.write("Posez-moi une question sur un site radio 👇")
 
+# --- CHARGEMENT DU CSV ---
 df = pd.read_csv("sites_radio_nabeul.csv")
 
 # Nettoyage et conversion coordonnées
@@ -56,7 +56,6 @@ def extraire_coordonnees(msg):
     msg_corrige = re.sub(r'(\d),(\d)', r'\1.\2', msg)
     # Remplacer la virgule séparatrice entre latitude et longitude par un espace
     msg_corrige = re.sub(r'(\d\.\d+),(\d)', r'\1 \2', msg_corrige)
-    
     # Extraire tous les nombres décimaux (flottants)
     match = re.findall(r'[-+]?\d*\.\d+|\d+', msg_corrige)
     if len(match) >= 2:
@@ -68,7 +67,7 @@ def extraire_coordonnees(msg):
             return None
     return None
 
-
+# --- LOGIQUE ERIBOT ---
 def get_eribot_response(msg):
     msg_lower = msg.lower()
     msg_upper = msg.upper()
@@ -85,31 +84,35 @@ def get_eribot_response(msg):
     # --- Mots-clés pour recherche du site le plus proche ---
     nearest_keywords = ["plus proche", "site le plus proche", "nearest", "proche"]
 
-    #  ----- Liste de tous les sites de Nabeul -----
+    # 1) ----- Liste de tous les sites de Nabeul -----
     if any(keyword in msg_lower for keyword in list_keywords) and "nabeul" in msg_lower:
         all_sites = df[site_col].tolist()
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-    # ----- Recherche du site le plus proche -----
+    # 2) ----- Recherche du site le plus proche -----
     if any(keyword in msg_lower for keyword in nearest_keywords):
         coords = extraire_coordonnees(msg)
         if coords:
             lat_user, lon_user = coords
+            # Calcul des distances euclidiennes
             df_temp = df.copy()
             df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_user) ** 2 + (df_temp["LONG"] - lon_user) ** 2) ** 0.5
+            # Trier et prendre les 3 premiers
             closest = df_temp.nsmallest(3, "DISTANCE")
+            # Génération de la réponse
             lines = ["Voici les 3 sites les plus proches :"]
             for i, row in enumerate(closest.itertuples(), start=1):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
             return "\n".join(lines)
 
-    #  ----- Recherche par nom de site avec priorité mots-clés -----
+    # 3) ----- Recherche par nom de site -----
+    site_data = None
     matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
 
-        # Vérification des mots-clés avant le else final
         if any(k in msg_lower for k in ["oss", "id"]):
             return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
         elif any(k in msg_lower for k in ["radio type 4g", "type radio 4g"]):
@@ -123,7 +126,6 @@ def get_eribot_response(msg):
         elif any(k in msg_lower for k in ["longitude", "long"]):
             return f"La longitude du site {site} est : {site_data['LONG']}"
         else:
-            # Affiche toutes les infos si aucun mot-clé spécifique n’est trouvé
             return (
                 f"Voici les infos disponibles pour le site {site} :\n"
                 f"- OSS ID : {site_data['4G OSS ID']}\n"
@@ -132,7 +134,7 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-    # 4) ----- Recherche dans autres colonnes -----
+    # 4 ----- Recherche dans autres colonnes -----
     msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
     tokens = msg_clean.split()
     for col in ['4G OSS ID', 'Radio Type 4G', 'Radio Type 3G', 'LAT', 'LONG']:
@@ -151,11 +153,8 @@ def get_eribot_response(msg):
 
     return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
 
-
-
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
-
 if user_input:
     response = get_eribot_response(user_input)
     st.text_area("Réponse ERIBot :", value=response, height=250)
