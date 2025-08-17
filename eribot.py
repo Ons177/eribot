@@ -3,9 +3,12 @@ import pandas as pd
 from PIL import Image
 import re
 
-# --- CONFIG PAGE ET STYLE ---
-st.set_page_config(page_title="ERIBot - Ericsson", page_icon="🚱")
+from PIL import Image
 
+# --- CONFIG PAGE ---
+st.set_page_config(page_title="ERIBot - Ericsson", page_icon="🚱", layout="wide")
+
+# --- CSS AVANCÉ ---
 st.markdown("""
 <style>
 /* --- APP BACKGROUND --- */
@@ -15,12 +18,23 @@ st.markdown("""
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
 
-/* --- TITRE PRINCIPAL --- */
-h1, h2, h3, h4 {
-    color: #ffcc00 !important; /* Jaune doré Ericsson */
+/* --- HEADER FLEX : LOGO + TITRE --- */
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+.header-container img {
+    height: 80px;
+    margin-right: 20px;
+}
+.header-container h1 {
+    color: #ffcc00 !important;
     font-weight: bold !important;
     text-align: center !important;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
+    font-size: 2.5em !important;
 }
 
 /* --- ZONE DE TEXTE (OUTPUT BOT) --- */
@@ -46,8 +60,6 @@ h1, h2, h3, h4 {
     font-weight: bold !important;
     transition: all 0.3s ease-in-out !important;
 }
-
-/* Effet focus sur input */
 [data-testid="stTextInput"] input:focus {
     border-color: #00ccff !important;
     box-shadow: 0 0 10px #00ccff !important;
@@ -65,8 +77,6 @@ h1, h2, h3, h4 {
     font-size: 16px !important;
     transition: all 0.3s ease-in-out !important;
 }
-
-/* Effet hover bouton */
 [data-testid="stButton"] button:hover {
     background-color: #ffaa00 !important;
     color: white !important;
@@ -75,12 +85,20 @@ h1, h2, h3, h4 {
 </style>
 """, unsafe_allow_html=True)
 
-
-# --- LOGO ---
+# --- HEADER LOGO + TITRE ---
 logo = Image.open("ericsson_logo.png")
-st.image(logo, width=150)
-st.title("💬 ERIBot - Assistant Réseau Ericsson")
+st.markdown(
+    f"""
+    <div class="header-container">
+        <img src="data:image/png;base64,{st.image_to_bytes(logo)}" alt="Logo Ericsson">
+        <h1>💬 ERIBot - Assistant Réseau Ericsson</h1>
+    </div>
+    """, unsafe_allow_html=True
+)
+
 st.write("Posez-moi une question sur un site radio 👇")
+user_input = st.text_input("Votre question")
+st.text_area("Réponse ERIBot :", value="", height=250)
 
 # --- CHARGEMENT DU CSV ---
 df = pd.read_csv("sites_radio_nabeul.csv")
