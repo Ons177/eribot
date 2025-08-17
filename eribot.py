@@ -120,8 +120,7 @@ def get_eribot_response(msg):
             return "\n".join(lines)
 
     # Recherche par nom de site
-    matched_sites = [site for site in df[site_col] if site.strip().upper() in msg.upper()]
-
+    matched_sites = [site for site in df[site_col] if site.strip().upper() == msg_upper.strip()]
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
