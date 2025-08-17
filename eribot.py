@@ -136,22 +136,39 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-    # 4 ----- Recherche dans autres colonnes -----
-    msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
-    tokens = msg_clean.split()
-    for col in ['4G OSS ID', 'Radio Type 4G', 'Radio Type 3G', 'LAT', 'LONG']:
-        for token in tokens:
-            if col in ['LAT', 'LONG']:
-                try:
-                    val = float(token)
-                    matched_rows = df[(df[col] - val).abs() < 0.0001]
-                except:
-                    continue
-            else:
-                matched_rows = df[df[col].astype(str).str.lower() == token]
+  # Nettoyage du message
+msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
+tokens = msg_clean.split()
+
+# Recherche dans les colonnes
+for col in ['4G OSS ID', 'Radio Type 4G', 'Radio Type 3G', 'LAT', 'LONG']:
+    for token in tokens:
+        if col in ['LAT', 'LONG']:
+            try:
+                val = float(token)
+            except ValueError:
+                continue
+
+            # Recherche stricte pour LAT et LONG
+            if col == 'LAT':
+                lat_val = val
+            elif col == 'LONG':
+                long_val = val
+        else:
+            matched_rows = df[df[col].astype(str).str.lower() == token]
             if not matched_rows.empty:
                 sites_found = matched_rows[site_col].tolist()
                 return f"Les sites correspondants à la valeur '{token}' dans la colonne '{col}' sont : {', '.join(sites_found)}"
+
+# Vérification si on a récupéré les deux coordonnées
+if 'lat_val' in locals() and 'long_val' in locals():
+    matched_rows = df[(df['LAT'] == lat_val) & (df['LONG'] == long_val)]
+    if not matched_rows.empty:
+        sites_found = matched_rows[site_col].tolist()
+        return f"Le site correspondant exactement aux coordonnées {lat_val}, {long_val} est : {', '.join(sites_found)}"
+    else:
+        return "Aucun site ne correspond exactement à ces coordonnées."
+
 
     return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
 
