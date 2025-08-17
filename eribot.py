@@ -78,33 +78,16 @@ def get_eribot_response(msg):
         "afficher tous les sites de nabeul",
         "les sites de nabeul"
     ]
-
-    # --- Mots-clés pour recherche du site le plus proche ---
-    nearest_keywords = ["plus proche", "site le plus proche", "nearest", "proche"]
-
-    # 1) Liste de tous les sites
-    if any(keyword in msg_lower.replace("'", "").replace("’","") for keyword in list_keywords):
+    if any(keyword in msg_lower for keyword in list_keywords):
         all_sites = df[site_col].tolist()
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-    # 2) Recherche du site le plus proche
-    if any(keyword in msg_lower for keyword in nearest_keywords):
-        coords = extraire_coordonnees(msg)
-        if coords:
-            lat_user, lon_user = coords
-            df_temp = df.copy()
-            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_user) ** 2 + (df_temp["LONG"] - lon_user) ** 2) ** 0.5
-            closest = df_temp.nsmallest(3, "DISTANCE")
-            lines = ["Voici les 3 sites les plus proches :"]
-            for i, row in enumerate(closest.itertuples(), start=1):
-                lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
-            return "\n".join(lines)
-
-   msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
-    tokens = msg_clean.split()
+    # --- Extraction LAT + LONG ---
+    import re
+    msg_clean = msg.replace(',', '.')
+    tokens = re.findall(r'[-+]?\d*\.\d+|\d+', msg_clean)
     lat_val = None
     long_val = None
-
     for token in tokens:
         try:
             val = float(token)
@@ -112,12 +95,12 @@ def get_eribot_response(msg):
                 lat_val = val
             elif long_val is None:
                 long_val = val
-        except ValueError:
+        except:
             continue
 
-    # 2) Recherche exacte avec tolérance réaliste
+    # --- Recherche exacte avec tolérance ---
     if lat_val is not None and long_val is not None:
-        tolerance = 1e-4  # tolérance pour arrondis
+        tolerance = 1e-4
         matched_rows = df[
             ((df['LAT'] - lat_val).abs() < tolerance) &
             ((df['LONG'] - long_val).abs() < tolerance)
@@ -127,6 +110,22 @@ def get_eribot_response(msg):
             return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
         else:
             return "Aucun site ne correspond exactement à ces coordonnées. Veuillez vérifier LAT et LONG."
+
+    # --- Recherche par nom de site ---
+    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+    if matched_sites:
+        site = matched_sites[0]
+        site_data = df[df[site_col] == site].iloc[0]
+        return (
+            f"Voici les infos disponibles pour le site {site} :\n"
+            f"- OSS ID : {site_data['4G OSS ID']}\n"
+            f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
+            f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
+            f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+        )
+
+    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Veuillez fournir LAT et LONG."
+
 
 
     # 4) Recherche par nom de site
