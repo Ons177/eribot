@@ -78,7 +78,8 @@ def get_eribot_response(msg):
         "liste des sites",
         "afficher tous les sites",
         "tous les sites de nabeul",
-        "liste des sites de nabeul"
+        "liste des sites de nabeul",
+        "les sites de nabeul"
     ]
 
     # --- Mots-clés pour recherche du site le plus proche ---
