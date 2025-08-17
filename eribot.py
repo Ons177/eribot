@@ -141,33 +141,37 @@ msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"
 tokens = msg_clean.split()
 
 # Recherche dans les colonnes
-for col in ['4G OSS ID', 'Radio Type 4G', 'Radio Type 3G', 'LAT', 'LONG']:
-    for token in tokens:
-        if col in ['LAT', 'LONG']:
-            try:
-                val = float(token)
-            except ValueError:
-                continue
+# Nettoyage du message
+msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
+tokens = msg_clean.split()
 
-            # Recherche stricte pour LAT et LONG
-            if col == 'LAT':
-                lat_val = val
-            elif col == 'LONG':
-                long_val = val
-        else:
-            matched_rows = df[df[col].astype(str).str.lower() == token]
-            if not matched_rows.empty:
-                sites_found = matched_rows[site_col].tolist()
-                return f"Les sites correspondants à la valeur '{token}' dans la colonne '{col}' sont : {', '.join(sites_found)}"
+# Initialisation
+lat_val = None
+long_val = None
 
-# Vérification si on a récupéré les deux coordonnées
-if 'lat_val' in locals() and 'long_val' in locals():
+# Extraction des coordonnées
+for token in tokens:
+    try:
+        val = float(token)
+        if lat_val is None:
+            lat_val = val
+        elif long_val is None:
+            long_val = val
+    except ValueError:
+        continue
+
+# Vérification et recherche exacte
+if lat_val is not None and long_val is not None:
     matched_rows = df[(df['LAT'] == lat_val) & (df['LONG'] == long_val)]
     if not matched_rows.empty:
         sites_found = matched_rows[site_col].tolist()
-        return f"Le site correspondant exactement aux coordonnées {lat_val}, {long_val} est : {', '.join(sites_found)}"
+        result = f"Le site correspondant exactement aux coordonnées {lat_val}, {long_val} est : {sites_found[0]}"
     else:
-        return "Aucun site ne correspond exactement à ces coordonnées."
+        result = "Aucun site ne correspond exactement à ces coordonnées."
+else:
+    result = "Veuillez fournir à la fois LAT et LONG pour une recherche exacte."
+
+return result
 
 
     return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
