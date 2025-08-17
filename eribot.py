@@ -112,40 +112,46 @@ def get_eribot_response(msg):
             return "\n".join(lines)
 
     # 3) ----- Recherche par nom de site -----
-    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+# --- Priorité aux mots-clés ---
+site_data = None
+matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
 
-    if matched_sites:
-        site = matched_sites[0]
-        site_data = df[df[site_col] == site].iloc[0]
+# Si un mot-clé spécifique est présent, on traite d’abord le type de question
+if matched_sites:
+    site = matched_sites[0]
+    site_data = df[df[site_col] == site].iloc[0]
 
-        if "oss" in msg_lower or "id" in msg_lower:
-            return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
+    # Vérification des mots-clés **avant** le else final
+    if any(k in msg_lower for k in ["oss", "id"]):
+        return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
+    
+    elif any(k in msg_lower for k in ["radio type 4g", "type radio 4g"]):
+        return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
+    
+    elif any(k in msg_lower for k in ["radio type 3g", "type radio 3g"]):
+        return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
+    
+    elif any(k in msg_lower for k in ["gps", "coordonnée"]):
+        return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+    
+    elif any(k in msg_lower for k in ["latitude", "lat"]):
+        return f"La latitude du site {site} est : {site_data['LAT']}"
+    
+    elif any(k in msg_lower for k in ["longitude", "long"]):
+        return f"La longitude du site {site} est : {site_data['LONG']}"
+    
+    # Sinon, on affiche toutes les infos
+    else:
+        return (
+            f"Voici les infos disponibles pour le site {site} :\n"
+            f"- OSS ID : {site_data['4G OSS ID']}\n"
+            f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
+            f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
+            f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+        )
 
-        elif "radio type 4g" in msg_lower or "type radio 4g" in msg_lower:
-            return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
 
-        elif "radio type 3g" in msg_lower or "type radio 3g" in msg_lower:
-            return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
-
-        elif "gps" in msg_lower or "coordonnée" in msg_lower:
-            return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-
-        elif "latitude" in msg_lower or "lat" in msg_lower:
-            return f"La latitude du site {site} est : {site_data['LAT']}"
-
-        elif "longitude" in msg_lower or "long" in msg_lower:
-            return f"La longitude du site {site} est : {site_data['LONG']}"
-
-        else:
-            return (
-                f"Voici les infos disponibles pour le site {site} :\n"
-                f"- OSS ID : {site_data['4G OSS ID']}\n"
-                f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
-                f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
-                f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-            )
-
-    # 4) ----- Recherche dans autres colonnes -----
+    #  ----- Recherche dans autres colonnes -----
     msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
     tokens = msg_clean.split()
 
