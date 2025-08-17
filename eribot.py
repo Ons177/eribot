@@ -85,12 +85,12 @@ def get_eribot_response(msg):
     # --- Mots-clés pour recherche du site le plus proche ---
     nearest_keywords = ["plus proche", "site le plus proche", "nearest", "proche"]
 
-    # 1) ----- Liste de tous les sites de Nabeul -----
+    #  ----- Liste de tous les sites de Nabeul -----
     if any(keyword in msg_lower for keyword in list_keywords) and "nabeul" in msg_lower:
         all_sites = df[site_col].tolist()
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-    # 2) ----- Recherche du site le plus proche -----
+    # ----- Recherche du site le plus proche -----
     if any(keyword in msg_lower for keyword in nearest_keywords):
         coords = extraire_coordonnees(msg)
         if coords:
@@ -103,7 +103,7 @@ def get_eribot_response(msg):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
             return "\n".join(lines)
 
-    # 3) ----- Recherche par nom de site avec priorité mots-clés -----
+    #  ----- Recherche par nom de site avec priorité mots-clés -----
     matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
     if matched_sites:
         site = matched_sites[0]
