@@ -82,8 +82,7 @@ def get_eribot_response(msg):
         all_sites = df[site_col].tolist()
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-    # --- Extraction LAT + LONG ---
-    import re
+       # --- Recherche par coordonnées LAT + LONG ---
     msg_clean = msg.replace(',', '.')
     tokens = re.findall(r'[-+]?\d*\.\d+|\d+', msg_clean)
     lat_val = None
@@ -98,9 +97,8 @@ def get_eribot_response(msg):
         except:
             continue
 
-    # --- Recherche exacte avec tolérance ---
     if lat_val is not None and long_val is not None:
-        tolerance = 1e-4
+        tolerance = 1e-4  # Tolérance pour arrondis
         matched_rows = df[
             ((df['LAT'] - lat_val).abs() < tolerance) &
             ((df['LONG'] - long_val).abs() < tolerance)
@@ -109,7 +107,29 @@ def get_eribot_response(msg):
             site = matched_rows[site_col].iloc[0]
             return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
         else:
-            return "Aucun site ne correspond exactement à ces coordonnées. Veuillez vérifier LAT et LONG."
+            # Si aucun site exact, proposer les 3 sites les plus proches
+            df_temp = df.copy()
+            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_val) ** 2 + (df_temp["LONG"] - long_val) ** 2) ** 0.5
+            closest = df_temp.nsmallest(3, "DISTANCE")
+            lines = ["Aucun site exact trouvé. Voici les 3 sites les plus proches :"]
+            for i, row in enumerate(closest.itertuples(), start=1):
+                lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
+            return "\n".join(lines)
+
+    # --- Recherche par nom de site ---
+    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+    if matched_sites:
+        site = matched_sites[0]
+        site_data = df[df[site_col] == site].iloc[0]
+        return (
+            f"Voici les infos disponibles pour le site {site} :\n"
+            f"- OSS ID : {site_data['4G OSS ID']}\n"
+            f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
+            f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
+            f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+        )
+
+    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Veuillez fournir LAT et LONG."
 
     # --- Recherche par nom de site ---
     matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
