@@ -16,23 +16,15 @@ st.markdown("""
 }
 
 /* --- TITRE PRINCIPAL --- */
-h1 {
+h1, h2, h3, h4 {
     color: #ffcc00 !important; /* Jaune doré Ericsson */
     font-weight: bold !important;
     text-align: center !important;
-    font-size: 2.5em !important;
-    margin-bottom: 20px !important;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
 }
 
-/* --- TEXTES NORMAUX --- */
-p, label, span {
-    font-size: 16px !important;
-    color: #f2f2f2 !important;
-}
-
 /* --- ZONE DE TEXTE (OUTPUT BOT) --- */
-textarea, .stTextArea textarea {
+[data-testid="stTextArea"] textarea {
     background: #e6f0ff !important;
     color: #002244 !important;
     font-weight: 600 !important;
@@ -44,7 +36,7 @@ textarea, .stTextArea textarea {
 }
 
 /* --- CHAMP D’ENTRÉE (INPUT USER) --- */
-input, .stTextInput input {
+[data-testid="stTextInput"] input {
     border: 2px solid #ffcc00 !important;
     border-radius: 12px !important;
     padding: 12px !important;
@@ -56,14 +48,14 @@ input, .stTextInput input {
 }
 
 /* Effet focus sur input */
-input:focus, .stTextInput input:focus {
+[data-testid="stTextInput"] input:focus {
     border-color: #00ccff !important;
     box-shadow: 0 0 10px #00ccff !important;
     outline: none !important;
 }
 
 /* --- BOUTONS STREAMLIT --- */
-button, .stButton>button {
+[data-testid="stButton"] button {
     background-color: #ffcc00 !important;
     color: #002244 !important;
     font-weight: bold !important;
@@ -75,13 +67,14 @@ button, .stButton>button {
 }
 
 /* Effet hover bouton */
-button:hover, .stButton>button:hover {
+[data-testid="stButton"] button:hover {
     background-color: #ffaa00 !important;
     color: white !important;
     transform: scale(1.05) !important;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # --- LOGO ---
 logo = Image.open("ericsson_logo.png")
