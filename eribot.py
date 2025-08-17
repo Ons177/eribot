@@ -121,10 +121,10 @@ def get_eribot_response(msg):
         if "oss" in msg_lower or "id" in msg_lower:
             return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
 
-        elif "radio type 4g" in msg_lower:
+        elif "radio type 4g" in msg_lower or "type radio 4g" in msg_lower:
             return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
 
-        elif "radio type 3g" in msg_lower:
+        elif "radio type 3g" in msg_lower or "type radio 3g" in msg_lower:
             return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
 
         elif "gps" in msg_lower or "coordonnée" in msg_lower:
