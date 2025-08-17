@@ -100,7 +100,6 @@ def get_eribot_response(msg):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
             return "\n".join(lines)
 
-    # Nettoyage et extraction des nombres
     msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
     tokens = msg_clean.split()
     lat_val = None
@@ -116,8 +115,9 @@ def get_eribot_response(msg):
         except ValueError:
             continue
 
+    # --- Recherche exacte par LAT+LONG ---
     if lat_val is not None and long_val is not None:
-        tolerance = 1e-4  # tolérance pour arrondis
+        tolerance = 1e-6  # tolérance pour les arrondis
         matched_rows = df[
             ((df['LAT'] - lat_val).abs() < tolerance) &
             ((df['LONG'] - long_val).abs() < tolerance)
@@ -126,15 +126,7 @@ def get_eribot_response(msg):
             site = matched_rows[site_col].iloc[0]
             return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
         else:
-            # Aucun site exact, on retourne le plus proche
-            df_temp = df.copy()
-            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_val) ** 2 + (df_temp["LONG"] - long_val) ** 2) ** 0.5
-            closest = df_temp.nsmallest(1, "DISTANCE")
-            site = closest[site_col].iloc[0]
-            distance = closest["DISTANCE"].iloc[0]
-            return f"Aucun site exact trouvé. Le site le plus proche est : {site} (distance = {distance:.5f})"
-
-
+            return "Aucun site ne correspond exactement à ces coordonnées. Veuillez vérifier LAT et LONG."
 
     # 4) Recherche par nom de site
     matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
