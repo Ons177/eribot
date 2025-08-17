@@ -110,39 +110,30 @@ def extraire_coordonnees(msg):
 
 # --- FONCTION ERIBOT ---
 def get_eribot_response(msg):
+    msg_upper = msg.upper()
     msg_lower = msg.lower()
-    msg_upper_clean = re.sub(r'[^A-Za-z0-9_]', '', msg).upper()  # Nettoyer message
 
     # --- Liste de tous les sites ---
-    list_keywords = [
-        "tous les sites de nabeul",
-        "liste des sites de nabeul",
-        "afficher tous les sites de nabeul",
-        "les sites de nabeul"
-    ]
-    if any(keyword in msg_lower for keyword in list_keywords):
-        all_sites = df[site_col].tolist()
-        return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
+    site_list = df[site_col].tolist()
 
-    # --- Recherche par nom de site ---
-    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper_clean]
+    # --- Recherche par texte : nom de site ---
+    matched_sites = [site for site in site_list if site.upper() in msg_upper]
+
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
 
-        if any(k in msg_lower for k in ["oss", "id"]):
-            return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
-        elif any(k in msg_lower for k in ["radio type 4g", "type radio 4g"]):
-            return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
-        elif any(k in msg_lower for k in ["radio type 3g", "type radio 3g"]):
+        # Vérifier ce que l'utilisateur demande
+        if any(k in msg_upper for k in ["3G", "TYPE RADIO 3G"]):
             return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
-        elif any(k in msg_lower for k in ["gps", "coordonnée"]):
+        elif any(k in msg_upper for k in ["4G", "TYPE RADIO 4G"]):
+            return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
+        elif any(k in msg_upper for k in ["OSS", "ID"]):
+            return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
+        elif any(k in msg_upper for k in ["GPS", "COORDONNÉE", "LAT", "LONG", "COORDONNEES"]):
             return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-        elif any(k in msg_lower for k in ["latitude", "lat"]):
-            return f"La latitude du site {site} est : {site_data['LAT']}"
-        elif any(k in msg_lower for k in ["longitude", "long"]):
-            return f"La longitude du site {site} est : {site_data['LONG']}"
         else:
+            # Si aucune info spécifique demandée, donner tout
             return (
                 f"Voici les infos disponibles pour le site {site} :\n"
                 f"- OSS ID : {site_data['4G OSS ID']}\n"
@@ -151,25 +142,38 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-    # --- Recherche par coordonnées ---
+    # --- Recherche par coordonnées LAT + LONG ---
     coords = extraire_coordonnees(msg)
     if coords:
         lat_val, long_val = coords
-        tolerance = 1e-4
-        matched_rows = df[((df['LAT'] - lat_val).abs() < tolerance) & ((df['LONG'] - long_val).abs() < tolerance)]
+        tolerance = 1e-4  # Tolérance pour arrondis
+        matched_rows = df[
+            ((df['LAT'] - lat_val).abs() < tolerance) &
+            ((df['LONG'] - long_val).abs() < tolerance)
+        ]
         if not matched_rows.empty:
             site = matched_rows[site_col].iloc[0]
             return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
         else:
+            # Si aucun site exact, proposer les 3 sites les plus proches
             df_temp = df.copy()
-            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_val)**2 + (df_temp["LONG"] - long_val)**2)**0.5
+            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_val) ** 2 + (df_temp["LONG"] - long_val) ** 2) ** 0.5
             closest = df_temp.nsmallest(3, "DISTANCE")
             lines = ["Aucun site exact trouvé. Voici les 3 sites les plus proches :"]
             for i, row in enumerate(closest.itertuples(), start=1):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
             return "\n".join(lines)
 
-    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie."
+    # --- Liste complète des sites ---
+    list_keywords = ["tous les sites de nabeul", "liste des sites de nabeul",
+                     "afficher tous les sites de nabeul", "les sites de nabeul"]
+    if any(keyword in msg_lower for keyword in list_keywords):
+        all_sites = df[site_col].tolist()
+        return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
+
+    # --- Si rien trouvé ---
+    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
+
 
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
