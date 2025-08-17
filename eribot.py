@@ -172,7 +172,7 @@ def get_eribot_response(msg):
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
     # --- Si rien trouvé ---
-    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
+    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler?"
 
 
 # --- INTERFACE UTILISATEUR ---
