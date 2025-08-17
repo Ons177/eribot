@@ -91,70 +91,50 @@ def get_eribot_response(msg):
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
     # 2) ----- Recherche du site le plus proche -----
-    #    On vérifie : (mot-clé « proche ») + 2 coordonnées dans le message
     if any(keyword in msg_lower for keyword in nearest_keywords):
         coords = extraire_coordonnees(msg)
         if coords:
             lat_user, lon_user = coords
-
-            # Calcul des distances euclidiennes
             df_temp = df.copy()
             df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_user) ** 2 + (df_temp["LONG"] - lon_user) ** 2) ** 0.5
-
-            # Trier et prendre les 3 premiers
             closest = df_temp.nsmallest(3, "DISTANCE")
-
-            # Génération de la réponse
             lines = ["Voici les 3 sites les plus proches :"]
             for i, row in enumerate(closest.itertuples(), start=1):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
-
             return "\n".join(lines)
 
-    # 3) ----- Recherche par nom de site -----
-# --- Priorité aux mots-clés ---
-site_data = None
-matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+    # 3) ----- Recherche par nom de site avec priorité mots-clés -----
+    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+    if matched_sites:
+        site = matched_sites[0]
+        site_data = df[df[site_col] == site].iloc[0]
 
-# Si un mot-clé spécifique est présent, on traite d’abord le type de question
-if matched_sites:
-    site = matched_sites[0]
-    site_data = df[df[site_col] == site].iloc[0]
+        # Vérification des mots-clés avant le else final
+        if any(k in msg_lower for k in ["oss", "id"]):
+            return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
+        elif any(k in msg_lower for k in ["radio type 4g", "type radio 4g"]):
+            return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
+        elif any(k in msg_lower for k in ["radio type 3g", "type radio 3g"]):
+            return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
+        elif any(k in msg_lower for k in ["gps", "coordonnée"]):
+            return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+        elif any(k in msg_lower for k in ["latitude", "lat"]):
+            return f"La latitude du site {site} est : {site_data['LAT']}"
+        elif any(k in msg_lower for k in ["longitude", "long"]):
+            return f"La longitude du site {site} est : {site_data['LONG']}"
+        else:
+            # Affiche toutes les infos si aucun mot-clé spécifique n’est trouvé
+            return (
+                f"Voici les infos disponibles pour le site {site} :\n"
+                f"- OSS ID : {site_data['4G OSS ID']}\n"
+                f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
+                f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
+                f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+            )
 
-    # Vérification des mots-clés **avant** le else final
-    if any(k in msg_lower for k in ["oss", "id"]):
-        return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
-    
-    elif any(k in msg_lower for k in ["radio type 4g", "type radio 4g"]):
-        return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
-    
-    elif any(k in msg_lower for k in ["radio type 3g", "type radio 3g"]):
-        return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
-    
-    elif any(k in msg_lower for k in ["gps", "coordonnée"]):
-        return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-    
-    elif any(k in msg_lower for k in ["latitude", "lat"]):
-        return f"La latitude du site {site} est : {site_data['LAT']}"
-    
-    elif any(k in msg_lower for k in ["longitude", "long"]):
-        return f"La longitude du site {site} est : {site_data['LONG']}"
-    
-    # Sinon, on affiche toutes les infos
-    else:
-        return (
-            f"Voici les infos disponibles pour le site {site} :\n"
-            f"- OSS ID : {site_data['4G OSS ID']}\n"
-            f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
-            f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
-            f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-        )
-
-
-    # 4 ----- Recherche dans autres colonnes -----
+    # 4) ----- Recherche dans autres colonnes -----
     msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
     tokens = msg_clean.split()
-
     for col in ['4G OSS ID', 'Radio Type 4G', 'Radio Type 3G', 'LAT', 'LONG']:
         for token in tokens:
             if col in ['LAT', 'LONG']:
@@ -165,7 +145,6 @@ if matched_sites:
                     continue
             else:
                 matched_rows = df[df[col].astype(str).str.lower() == token]
-
             if not matched_rows.empty:
                 sites_found = matched_rows[site_col].tolist()
                 return f"Les sites correspondants à la valeur '{token}' dans la colonne '{col}' sont : {', '.join(sites_found)}"
