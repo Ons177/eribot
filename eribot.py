@@ -8,30 +8,81 @@ st.set_page_config(page_title="ERIBot - Ericsson", page_icon="🚱")
 
 st.markdown(
     """
-    <style>
-    .stApp {
-        background-color: #003399;
-        color: white;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    h1 {
-        color: #ff0000;
-        font-weight: bold;
-    }
-    textarea {
-        background-color: #e6f0ff;
-        color: #003399;
-        font-weight: 600;
-    }
-    input[type="text"] {
-        border: 2px solid #ff0000;
-        border-radius: 8px;
-        padding: 8px;
-        font-size: 16px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
+   <style>
+/* --- APP BACKGROUND --- */
+.stApp {
+    background: linear-gradient(135deg, #002244, #0044cc);
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- TITRE PRINCIPAL --- */
+h1 {
+    color: #ffcc00; /* Jaune doré Ericsson */
+    font-weight: bold;
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+}
+
+/* --- TEXTES NORMAUX --- */
+p, label {
+    font-size: 16px;
+    color: #f2f2f2;
+}
+
+/* --- ZONE DE TEXTE (OUTPUT BOT) --- */
+.stTextArea > div > textarea {
+    background: #e6f0ff;
+    color: #002244;
+    font-weight: 600;
+    border-radius: 15px;
+    padding: 14px;
+    font-size: 15px;
+    border: 2px solid #ffcc00;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+/* --- CHAMP D’ENTRÉE (INPUT USER) --- */
+.stTextInput > div > div > input {
+    border: 2px solid #ffcc00;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 16px;
+    color: #002244;
+    background-color: #ffffff;
+    font-weight: bold;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Effet focus sur input */
+.stTextInput > div > div > input:focus {
+    border-color: #00ccff;
+    box-shadow: 0 0 10px #00ccff;
+    outline: none;
+}
+
+/* --- BOUTONS STREAMLIT --- */
+.stButton>button {
+    background-color: #ffcc00;
+    color: #002244;
+    font-weight: bold;
+    border-radius: 10px;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Effet hover bouton */
+.stButton>button:hover {
+    background-color: #ffaa00;
+    color: white;
+    transform: scale(1.05);
+}
+</style>
+
 )
 
 # --- LOGO ---
