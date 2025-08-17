@@ -100,18 +100,34 @@ def get_eribot_response(msg):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
             return "\n".join(lines)
 
-# Vérification et recherche exacte avec tolérance
-if lat_val is not None and long_val is not None:
-    tolerance = 1e-6
-    matched_rows = df[
-        (df['LAT'] - lat_val).abs() < tolerance &
-        (df['LONG'] - long_val).abs() < tolerance
-    ]
-    if not matched_rows.empty:
-        sites_found = matched_rows[site_col].tolist()
-        return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {sites_found[0]}"
-    else:
-        return "Aucun site ne correspond exactement à ces coordonnées."
+# 3) Recherche exacte par coordonnées LAT & LONG
+    # Nettoyage et extraction des nombres
+    msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
+    tokens = msg_clean.split()
+    lat_val = None
+    long_val = None
+
+    for token in tokens:
+        try:
+            val = float(token)
+            if lat_val is None:
+                lat_val = val
+            elif long_val is None:
+                long_val = val
+        except ValueError:
+            continue
+
+    if lat_val is not None and long_val is not None:
+        tolerance = 1e-6
+        matched_rows = df[
+            ((df['LAT'] - lat_val).abs() < tolerance) &
+            ((df['LONG'] - long_val).abs() < tolerance)
+        ]
+        if not matched_rows.empty:
+            site = matched_rows[site_col].iloc[0]
+            return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
+        else:
+            return "Aucun site ne correspond exactement à ces coordonnées. Veuillez vérifier LAT et LONG."
 
 
 
