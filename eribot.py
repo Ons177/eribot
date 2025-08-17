@@ -15,6 +15,7 @@ st.markdown("""
     color: white !important;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
+
 /* TITRE */
 h1 {
     color: #ffcc00 !important;
@@ -24,6 +25,7 @@ h1 {
     margin-bottom: 20px !important;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
 }
+
 /* INPUT USER */
 [data-testid="stTextInput"] input {
     border: 2px solid #ffcc00 !important;
@@ -40,6 +42,7 @@ h1 {
     box-shadow: 0 0 10px #00ccff !important;
     outline: none !important;
 }
+
 /* BOUTONS */
 [data-testid="stButton"] button {
     background-color: #ffcc00 !important;
@@ -56,6 +59,7 @@ h1 {
     color: white !important;
     transform: scale(1.05) !important;
 }
+
 /* CARD BOT */
 .bot-card {
     background: #e6f0ff !important;
@@ -85,48 +89,35 @@ df = pd.read_csv("sites_radio_nabeul.csv")
 df['LAT'] = df['LAT'].astype(str).str.replace(',', '.').astype(float)
 df['LONG'] = df['LONG'].astype(str).str.replace(',', '.').astype(float)
 
-# Colonne du nom de site
+# Récupérer la colonne du nom de site
 site_col = df.columns[1]
 
-# --- Normalisation ---
+# --- FONCTION DE NORMALISATION ---
 def normalize(text):
-    return text.upper().replace("_", "").replace(" ", "")
+    return re.sub(r'[\s_]', '', text).upper()
 
-# --- Fonction principale ---
+# --- FONCTION DE RÉPONSE ---
 def get_eribot_response(msg):
     msg_norm = normalize(msg)
-    msg_lower = msg.lower()
 
-    # --- Liste de tous les sites ---
-    list_keywords = [
-        "tous les sites de nabeul",
-        "liste des sites de nabeul",
-        "afficher tous les sites de nabeul",
-        "les sites de nabeul"
-    ]
-    if any(keyword in msg_lower for keyword in list_keywords):
-        all_sites = df[site_col].tolist()
-        return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
-
-    # --- Recherche par nom de site ---
+    # Recherche du site par nom
     matched_sites = [site for site in df[site_col] if normalize(site) in msg_norm]
 
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
 
-        if "radio type 4g" in msg_lower:
+        # Recherche de l'information demandée
+        if "radio type 4g" in msg.lower():
             return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
-        elif "radio type 3g" in msg_lower:
+        elif "radio type 3g" in msg.lower():
             return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
-        elif "oss" in msg_lower or "id" in msg_lower:
+        elif "oss" in msg.lower():
             return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
-        elif "latitude" in msg_lower or "lat" in msg_lower:
+        elif "latitude" in msg.lower() or "lat" in msg.lower():
             return f"La latitude du site {site} est : {site_data['LAT']}"
-        elif "longitude" in msg_lower or "long" in msg_lower:
+        elif "longitude" in msg.lower() or "long" in msg.lower():
             return f"La longitude du site {site} est : {site_data['LONG']}"
-        elif "gps" in msg_lower or "coordonnée" in msg_lower:
-            return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
         else:
             return (
                 f"Voici les infos disponibles pour le site {site} :\n"
@@ -136,8 +127,7 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-    # --- Sinon, pas trouvé ---
-    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
+    return "Désolé, je n'ai pas trouvé de site correspondant. Vérifie le nom du site."
 
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
