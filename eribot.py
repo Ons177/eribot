@@ -37,6 +37,7 @@ h1 {
     font-weight: bold !important;
     transition: all 0.3s ease-in-out !important;
 }
+
 [data-testid="stTextInput"] input:focus {
     border-color: #00ccff !important;
     box-shadow: 0 0 10px #00ccff !important;
@@ -54,6 +55,7 @@ h1 {
     font-size: 16px !important;
     transition: all 0.3s ease-in-out !important;
 }
+
 [data-testid="stButton"] button:hover {
     background-color: #ffaa00 !important;
     color: white !important;
@@ -81,6 +83,7 @@ with col2:
     st.markdown("<h1>💬 ERIBot - Assistant Réseau Ericsson</h1>", unsafe_allow_html=True)
 
 st.write("Posez-moi une question sur un site radio 👇")
+
 # --- CHARGEMENT DU CSV ---
 df = pd.read_csv("sites_radio_nabeul.csv")
 
@@ -93,11 +96,8 @@ site_col = df.columns[1]
 
 # --- EXTRACTION COORDONNEES AVEC REGEX ---
 def extraire_coordonnees(msg):
-    # Remplacer la virgule décimale dans les nombres par un point (ex: 36,847 -> 36.847)
     msg_corrige = re.sub(r'(\d),(\d)', r'\1.\2', msg)
-    # Remplacer la virgule séparatrice entre latitude et longitude par un espace
     msg_corrige = re.sub(r'(\d\.\d+),(\d)', r'\1 \2', msg_corrige)
-    # Extraire tous les nombres décimaux (flottants)
     match = re.findall(r'[-+]?\d*\.\d+|\d+', msg_corrige)
     if len(match) >= 2:
         try:
@@ -108,9 +108,10 @@ def extraire_coordonnees(msg):
             return None
     return None
 
+# --- FONCTION ERIBOT ---
 def get_eribot_response(msg):
     msg_lower = msg.lower()
-    msg_upper = msg.upper()
+    msg_upper_clean = re.sub(r'[^A-Za-z0-9_]', '', msg).upper()  # Nettoyer message
 
     # --- Liste de tous les sites ---
     list_keywords = [
@@ -123,74 +124,8 @@ def get_eribot_response(msg):
         all_sites = df[site_col].tolist()
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-       # --- Recherche par coordonnées LAT + LONG ---
-    msg_clean = msg.replace(',', '.')
-    tokens = re.findall(r'[-+]?\d*\.\d+|\d+', msg_clean)
-    lat_val = None
-    long_val = None
-    for token in tokens:
-        try:
-            val = float(token)
-            if lat_val is None:
-                lat_val = val
-            elif long_val is None:
-                long_val = val
-        except:
-            continue
-
-    if lat_val is not None and long_val is not None:
-        tolerance = 1e-4  # Tolérance pour arrondis
-        matched_rows = df[
-            ((df['LAT'] - lat_val).abs() < tolerance) &
-            ((df['LONG'] - long_val).abs() < tolerance)
-        ]
-        if not matched_rows.empty:
-            site = matched_rows[site_col].iloc[0]
-            return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
-        else:
-            # Si aucun site exact, proposer les 3 sites les plus proches
-            df_temp = df.copy()
-            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_val) ** 2 + (df_temp["LONG"] - long_val) ** 2) ** 0.5
-            closest = df_temp.nsmallest(3, "DISTANCE")
-            lines = ["Aucun site exact trouvé. Voici les 3 sites les plus proches :"]
-            for i, row in enumerate(closest.itertuples(), start=1):
-                lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
-            return "\n".join(lines)
-
     # --- Recherche par nom de site ---
-    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
-    if matched_sites:
-        site = matched_sites[0]
-        site_data = df[df[site_col] == site].iloc[0]
-        return (
-            f"Voici les infos disponibles pour le site {site} :\n"
-            f"- OSS ID : {site_data['4G OSS ID']}\n"
-            f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
-            f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
-            f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-        )
-
-    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Veuillez fournir LAT et LONG."
-
-    # --- Recherche par nom de site ---
-    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
-    if matched_sites:
-        site = matched_sites[0]
-        site_data = df[df[site_col] == site].iloc[0]
-        return (
-            f"Voici les infos disponibles pour le site {site} :\n"
-            f"- OSS ID : {site_data['4G OSS ID']}\n"
-            f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
-            f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
-            f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-        )
-
-    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Veuillez fournir LAT et LONG."
-
-
-
-    # 4) Recherche par nom de site
-    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper_clean]
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
@@ -216,7 +151,26 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
+    # --- Recherche par coordonnées ---
+    coords = extraire_coordonnees(msg)
+    if coords:
+        lat_val, long_val = coords
+        tolerance = 1e-4
+        matched_rows = df[((df['LAT'] - lat_val).abs() < tolerance) & ((df['LONG'] - long_val).abs() < tolerance)]
+        if not matched_rows.empty:
+            site = matched_rows[site_col].iloc[0]
+            return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
+        else:
+            df_temp = df.copy()
+            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_val)**2 + (df_temp["LONG"] - long_val)**2)**0.5
+            closest = df_temp.nsmallest(3, "DISTANCE")
+            lines = ["Aucun site exact trouvé. Voici les 3 sites les plus proches :"]
+            for i, row in enumerate(closest.itertuples(), start=1):
+                lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
+            return "\n".join(lines)
+
+    return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie."
+
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
 if user_input:
