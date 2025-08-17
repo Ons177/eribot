@@ -6,84 +6,82 @@ import re
 # --- CONFIG PAGE ET STYLE ---
 st.set_page_config(page_title="ERIBot - Ericsson", page_icon="🚱")
 
-st.markdown(
-    """
-   <style>
+st.markdown("""
+<style>
 /* --- APP BACKGROUND --- */
-.stApp {
-    background: linear-gradient(135deg, #002244, #0044cc);
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #002244, #0044cc) !important;
+    color: white !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
 
 /* --- TITRE PRINCIPAL --- */
 h1 {
-    color: #ffcc00; /* Jaune doré Ericsson */
-    font-weight: bold;
-    text-align: center;
-    font-size: 2.5em;
-    margin-bottom: 20px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    color: #ffcc00 !important; /* Jaune doré Ericsson */
+    font-weight: bold !important;
+    text-align: center !important;
+    font-size: 2.5em !important;
+    margin-bottom: 20px !important;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
 }
 
 /* --- TEXTES NORMAUX --- */
-p, label {
-    font-size: 16px;
-    color: #f2f2f2;
+p, label, span {
+    font-size: 16px !important;
+    color: #f2f2f2 !important;
 }
 
 /* --- ZONE DE TEXTE (OUTPUT BOT) --- */
-.stTextArea > div > textarea {
-    background: #e6f0ff;
-    color: #002244;
-    font-weight: 600;
-    border-radius: 15px;
-    padding: 14px;
-    font-size: 15px;
-    border: 2px solid #ffcc00;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+textarea, .stTextArea textarea {
+    background: #e6f0ff !important;
+    color: #002244 !important;
+    font-weight: 600 !important;
+    border-radius: 15px !important;
+    padding: 14px !important;
+    font-size: 15px !important;
+    border: 2px solid #ffcc00 !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25) !important;
 }
 
 /* --- CHAMP D’ENTRÉE (INPUT USER) --- */
-.stTextInput > div > div > input {
-    border: 2px solid #ffcc00;
-    border-radius: 12px;
-    padding: 12px;
-    font-size: 16px;
-    color: #002244;
-    background-color: #ffffff;
-    font-weight: bold;
-    transition: all 0.3s ease-in-out;
+input, .stTextInput input {
+    border: 2px solid #ffcc00 !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+    font-size: 16px !important;
+    color: #002244 !important;
+    background-color: #ffffff !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease-in-out !important;
 }
 
 /* Effet focus sur input */
-.stTextInput > div > div > input:focus {
-    border-color: #00ccff;
-    box-shadow: 0 0 10px #00ccff;
-    outline: none;
+input:focus, .stTextInput input:focus {
+    border-color: #00ccff !important;
+    box-shadow: 0 0 10px #00ccff !important;
+    outline: none !important;
 }
 
 /* --- BOUTONS STREAMLIT --- */
-.stButton>button {
-    background-color: #ffcc00;
-    color: #002244;
-    font-weight: bold;
-    border-radius: 10px;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    transition: all 0.3s ease-in-out;
+button, .stButton>button {
+    background-color: #ffcc00 !important;
+    color: #002244 !important;
+    font-weight: bold !important;
+    border-radius: 10px !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    font-size: 16px !important;
+    transition: all 0.3s ease-in-out !important;
 }
 
 /* Effet hover bouton */
-.stButton>button:hover {
-    background-color: #ffaa00;
-    color: white;
-    transform: scale(1.05);
+button:hover, .stButton>button:hover {
+    background-color: #ffaa00 !important;
+    color: white !important;
+    transform: scale(1.05) !important;
 }
 </style>
-"""
-)
+""", unsafe_allow_html=True)
 
 # --- LOGO ---
 logo = Image.open("ericsson_logo.png")
