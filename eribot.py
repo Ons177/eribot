@@ -6,7 +6,7 @@ import re
 # --- CONFIG PAGE ---
 st.set_page_config(page_title="ERIBot - Ericsson", page_icon="🚱")
 
-# --- CSS FONCTIONNEL ---
+# --- CSS MODERNE ---
 st.markdown("""
 <style>
 /* Fond global */
@@ -26,24 +26,6 @@ h1 {
     text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
 }
 
-/* TEXTE NORMAL */
-p, label, span {
-    font-size: 16px !important;
-    color: #f2f2f2 !important;
-}
-
-/* TEXTAREA BOT */
-[data-testid="stTextArea"] textarea {
-    background: #e6f0ff !important;
-    color: #002244 !important;
-    font-weight: 600 !important;
-    border-radius: 15px !important;
-    padding: 14px !important;
-    font-size: 15px !important;
-    border: 2px solid #ffcc00 !important;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.25) !important;
-}
-
 /* INPUT USER */
 [data-testid="stTextInput"] input {
     border: 2px solid #ffcc00 !important;
@@ -55,7 +37,6 @@ p, label, span {
     font-weight: bold !important;
     transition: all 0.3s ease-in-out !important;
 }
-
 [data-testid="stTextInput"] input:focus {
     border-color: #00ccff !important;
     box-shadow: 0 0 10px #00ccff !important;
@@ -73,11 +54,21 @@ p, label, span {
     font-size: 16px !important;
     transition: all 0.3s ease-in-out !important;
 }
-
 [data-testid="stButton"] button:hover {
     background-color: #ffaa00 !important;
     color: white !important;
     transform: scale(1.05) !important;
+}
+
+/* CARD BOT */
+.bot-card {
+    background: #e6f0ff !important;
+    color: #002244 !important;
+    border-radius: 15px !important;
+    padding: 20px !important;
+    margin-bottom: 15px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+    font-weight: 600 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -90,7 +81,6 @@ with col2:
     st.markdown("<h1>💬 ERIBot - Assistant Réseau Ericsson</h1>", unsafe_allow_html=True)
 
 st.write("Posez-moi une question sur un site radio 👇")
-
 # --- CHARGEMENT DU CSV ---
 df = pd.read_csv("sites_radio_nabeul.csv")
 
