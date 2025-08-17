@@ -67,50 +67,69 @@ def extraire_coordonnees(msg):
             return None
     return None
 
-# --- LOGIQUE ERIBOT ---
 def get_eribot_response(msg):
     msg_lower = msg.lower()
     msg_upper = msg.upper()
 
-    # --- Mots-clés pour lister tous les sites de Nabeul ---
+    # --- Liste de tous les sites ---
     list_keywords = [
         "tous les sites de nabeul",
         "liste des sites de nabeul",
         "afficher tous les sites de nabeul",
-        "tous les sites de nabeul",
-        "liste des sites de nabeul",
         "les sites de nabeul"
     ]
 
     # --- Mots-clés pour recherche du site le plus proche ---
     nearest_keywords = ["plus proche", "site le plus proche", "nearest", "proche"]
 
-    # 1) ----- Liste de tous les sites de Nabeul -----
-   if any(keyword in msg_lower.replace("'", "").replace("’","") for keyword in list_keywords):
-    all_sites = df[site_col].tolist()
-    return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
+    # 1) Liste de tous les sites
+    if any(keyword in msg_lower.replace("'", "").replace("’","") for keyword in list_keywords):
+        all_sites = df[site_col].tolist()
+        return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-
-    # 2) ----- Recherche du site le plus proche -----
+    # 2) Recherche du site le plus proche
     if any(keyword in msg_lower for keyword in nearest_keywords):
         coords = extraire_coordonnees(msg)
         if coords:
             lat_user, lon_user = coords
-            # Calcul des distances euclidiennes
             df_temp = df.copy()
             df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_user) ** 2 + (df_temp["LONG"] - lon_user) ** 2) ** 0.5
-            # Trier et prendre les 3 premiers
             closest = df_temp.nsmallest(3, "DISTANCE")
-            # Génération de la réponse
             lines = ["Voici les 3 sites les plus proches :"]
             for i, row in enumerate(closest.itertuples(), start=1):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
             return "\n".join(lines)
 
-    # 3) ----- Recherche par nom de site -----
-    site_data = None
-    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
+    # 3) ----- Recherche exacte par coordonnées -----
+    # Nettoyage du message
+    msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
+    tokens = msg_clean.split()
 
+    lat_val = None
+    long_val = None
+
+    # Extraction des coordonnées
+    for token in tokens:
+        try:
+            val = float(token)
+            if lat_val is None:
+                lat_val = val
+            elif long_val is None:
+                long_val = val
+        except ValueError:
+            continue
+
+    # Vérification et recherche exacte
+    if lat_val is not None and long_val is not None:
+        matched_rows = df[(df['LAT'] == lat_val) & (df['LONG'] == long_val)]
+        if not matched_rows.empty:
+            sites_found = matched_rows[site_col].tolist()
+            return f"Le site correspondant exactement aux coordonnées {lat_val}, {long_val} est : {sites_found[0]}"
+        else:
+            return "Aucun site ne correspond exactement à ces coordonnées."
+
+    # 4) Recherche par nom de site
+    matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
@@ -136,46 +155,7 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-  # Nettoyage du message
-msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
-tokens = msg_clean.split()
-
-# Recherche dans les colonnes
-# Nettoyage du message
-msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
-tokens = msg_clean.split()
-
-# Initialisation
-lat_val = None
-long_val = None
-
-# Extraction des coordonnées
-for token in tokens:
-    try:
-        val = float(token)
-        if lat_val is None:
-            lat_val = val
-        elif long_val is None:
-            long_val = val
-    except ValueError:
-        continue
-
-# Vérification et recherche exacte
-if lat_val is not None and long_val is not None:
-    matched_rows = df[(df['LAT'] == lat_val) & (df['LONG'] == long_val)]
-    if not matched_rows.empty:
-        sites_found = matched_rows[site_col].tolist()
-        result = f"Le site correspondant exactement aux coordonnées {lat_val}, {long_val} est : {sites_found[0]}"
-    else:
-        result = "Aucun site ne correspond exactement à ces coordonnées."
-else:
-    result = "Veuillez fournir à la fois LAT et LONG pour une recherche exacte."
-
-return result
-
-
     return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
-
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
 if user_input:
