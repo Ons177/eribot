@@ -16,7 +16,14 @@ st.markdown("""
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
 /* TITRE */
-h1 { color: #ffcc00 !important; font-weight: bold !important; text-align: center !important; font-size: 2.5em !important; margin-bottom: 20px !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important; }
+h1 {
+    color: #ffcc00 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    font-size: 2.5em !important;
+    margin-bottom: 20px !important;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
+}
 /* INPUT USER */
 [data-testid="stTextInput"] input {
     border: 2px solid #ffcc00 !important;
@@ -78,30 +85,17 @@ df = pd.read_csv("sites_radio_nabeul.csv")
 df['LAT'] = df['LAT'].astype(str).str.replace(',', '.').astype(float)
 df['LONG'] = df['LONG'].astype(str).str.replace(',', '.').astype(float)
 
-# Récupérer la colonne du nom de site (2e colonne)
+# Colonne du nom de site
 site_col = df.columns[1]
 
-# --- EXTRACTION COORDONNEES AVEC REGEX ---
-def extraire_coordonnees(msg):
-    msg_corrige = re.sub(r'(\d),(\d)', r'\1.\2', msg)
-    msg_corrige = re.sub(r'(\d\.\d+),(\d)', r'\1 \2', msg_corrige)
-    match = re.findall(r'[-+]?\d*\.\d+|\d+', msg_corrige)
-    if len(match) >= 2:
-        try:
-            lat = float(match[0])
-            lon = float(match[1])
-            return lat, lon
-        except:
-            return None
-    return None
+# --- Normalisation ---
+def normalize(text):
+    return text.upper().replace("_", "").replace(" ", "")
 
-def normalize(name):
-    """Normaliser les noms pour comparaison (supprime underscore et espace, passe en majuscule)"""
-    return name.upper().replace("_", "").replace(" ", "")
-
+# --- Fonction principale ---
 def get_eribot_response(msg):
-    msg_lower = msg.lower()
     msg_norm = normalize(msg)
+    msg_lower = msg.lower()
 
     # --- Liste de tous les sites ---
     list_keywords = [
@@ -114,53 +108,13 @@ def get_eribot_response(msg):
         all_sites = df[site_col].tolist()
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-    # --- Recherche par coordonnées LAT + LONG ---
-    tokens = re.findall(r'[-+]?\d*\.\d+|\d+', msg.replace(',', '.'))
-    lat_val = None
-    long_val = None
-    for token in tokens:
-        try:
-            val = float(token)
-            if lat_val is None:
-                lat_val = val
-            elif long_val is None:
-                long_val = val
-        except:
-            continue
-
-    if lat_val is not None and long_val is not None:
-        tolerance = 1e-4
-        matched_rows = df[
-            ((df['LAT'] - lat_val).abs() < tolerance) &
-            ((df['LONG'] - long_val).abs() < tolerance)
-        ]
-        if not matched_rows.empty:
-            site = matched_rows[site_col].iloc[0]
-            site_data = matched_rows.iloc[0]
-            return (
-                f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}\n"
-                f"- OSS ID : {site_data['4G OSS ID']}\n"
-                f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
-                f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
-                f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-            )
-        else:
-            # Si aucun site exact, proposer les 3 sites les plus proches
-            df_temp = df.copy()
-            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_val) ** 2 + (df_temp["LONG"] - long_val) ** 2) ** 0.5
-            closest = df_temp.nsmallest(3, "DISTANCE")
-            lines = ["Aucun site exact trouvé. Voici les 3 sites les plus proches :"]
-            for i, row in enumerate(closest.itertuples(), start=1):
-                lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
-            return "\n".join(lines)
-
     # --- Recherche par nom de site ---
     matched_sites = [site for site in df[site_col] if normalize(site) in msg_norm]
+
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
 
-        # Vérifier ce que l'utilisateur demande
         if "radio type 4g" in msg_lower:
             return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
         elif "radio type 3g" in msg_lower:
@@ -182,8 +136,8 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
+    # --- Sinon, pas trouvé ---
     return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
-
 
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
