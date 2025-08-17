@@ -151,7 +151,7 @@ if matched_sites:
         )
 
 
-    #  ----- Recherche dans autres colonnes -----
+    # 4 ----- Recherche dans autres colonnes -----
     msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
     tokens = msg_clean.split()
 
