@@ -69,13 +69,49 @@ def extraire_coordonnees(msg):
     return None
 
 
-
 def get_eribot_response(msg):
     msg_lower = msg.lower()
     msg_upper = msg.upper()
 
-    
-    # Recherche par nom de site
+    # --- Mots-clés pour lister tous les sites de Nabeul ---
+    list_keywords = [
+        "tous les sites",
+        "liste des sites",
+        "afficher tous les sites",
+        "tous les sites de nabeul",
+        "liste des sites de nabeul"
+    ]
+
+    # --- Mots-clés pour recherche du site le plus proche ---
+    nearest_keywords = ["plus proche", "site le plus proche", "nearest", "proche"]
+
+    # 1) ----- Liste de tous les sites de Nabeul -----
+    if any(keyword in msg_lower for keyword in list_keywords) and "nabeul" in msg_lower:
+        all_sites = df[site_col].tolist()
+        return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
+
+    # 2) ----- Recherche du site le plus proche -----
+    #    On vérifie : (mot-clé « proche ») + 2 coordonnées dans le message
+    if any(keyword in msg_lower for keyword in nearest_keywords):
+        coords = extraire_coordonnees(msg)
+        if coords:
+            lat_user, lon_user = coords
+
+            # Calcul des distances euclidiennes
+            df_temp = df.copy()
+            df_temp["DISTANCE"] = ((df_temp["LAT"] - lat_user) ** 2 + (df_temp["LONG"] - lon_user) ** 2) ** 0.5
+
+            # Trier et prendre les 3 premiers
+            closest = df_temp.nsmallest(3, "DISTANCE")
+
+            # Génération de la réponse
+            lines = ["Voici les 3 sites les plus proches :"]
+            for i, row in enumerate(closest.itertuples(), start=1):
+                lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
+
+            return "\n".join(lines)
+
+    # 3) ----- Recherche par nom de site -----
     matched_sites = [site for site in df[site_col] if site.upper() in msg_upper]
 
     if matched_sites:
@@ -109,22 +145,7 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-    # Recherche inverse avec extraction coordonnées GPS
-    coords = extraire_coordonnees(msg)
-    st.write(f"Coordonnées extraites : {coords}")  # Debug extraction
-
-    if coords:
-        lat_val, long_val = coords
-        matched_rows = df[
-            ((df['LAT'] - lat_val).abs() < 0.01) &
-            ((df['LONG'] - long_val).abs() < 0.01)
-        ]
-        st.write(f"Lignes correspondantes : {matched_rows}")  # Debug résultat recherche
-        if not matched_rows.empty:
-            sites_found = matched_rows[site_col].tolist()
-            return f"Sites correspondant aux coordonnées LAT={lat_val}, LONG={long_val} : {', '.join(sites_found)}"
-
-    # Recherche dans autres colonnes
+    # 4) ----- Recherche dans autres colonnes -----
     msg_clean = msg_lower.replace('[','').replace(']','').replace("'",'').replace('"','').replace(',', '.')
     tokens = msg_clean.split()
 
@@ -144,6 +165,7 @@ def get_eribot_response(msg):
                 return f"Les sites correspondants à la valeur '{token}' dans la colonne '{col}' sont : {', '.join(sites_found)}"
 
     return "Désolé, je n'ai pas trouvé de site correspondant à l'information fournie. Peux-tu reformuler ?"
+
 
 
 # --- INTERFACE UTILISATEUR ---
