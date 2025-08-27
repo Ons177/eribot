@@ -155,7 +155,7 @@ def get_eribot_response(msg):
             )
 
 
-    return "Désolé, je n'ai pas trouvé de site correspondant. Vérifiez le nom exact ou fournissez les coordonnées."
+    return "Désolé, je n'ai pas trouvé de site correspondant. Vérifiez le nom exact ou fournissez les coordonnées"
 
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
