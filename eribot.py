@@ -3,77 +3,52 @@ import pandas as pd
 from PIL import Image
 import re 
 
-# --- CONFIG PAGE ---
+
+# --- CONFIG PAGE ET STYLE ---
 st.set_page_config(page_title="ERIBot - Ericsson", page_icon="🚱")
 
-# --- CSS COMPLET ---
-st.markdown("""
-<style>
-[data-testid="stAppViewContainer"] {
-    background: linear-gradient(135deg, #002244, #0044cc) !important;
-    color: white !important;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-}
-h1 {
-    color: #ffcc00 !important;
-    font-weight: bold !important;
-    text-align: center !important;
-    font-size: 2.5em !important;
-    margin-bottom: 20px !important;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
-}
-[data-testid="stTextInput"] input {
-    border: 2px solid #ffcc00 !important;
-    border-radius: 12px !important;
-    padding: 12px !important;
-    font-size: 16px !important;
-    color: #002244 !important;
-    background-color: #ffffff !important;
-    font-weight: bold !important;
-}
-[data-testid="stTextInput"] input:focus {
-    border-color: #00ccff !important;
-    box-shadow: 0 0 10px #00ccff !important;
-    outline: none !important;
-}
-[data-testid="stButton"] button {
-    background-color: #ffcc00 !important;
-    color: #002244 !important;
-    font-weight: bold !important;
-    border-radius: 10px !important;
-    padding: 10px 20px !important;
-    font-size: 16px !important;
-}
-[data-testid="stButton"] button:hover {
-    background-color: #ffaa00 !important;
-    color: white !important;
-    transform: scale(1.05) !important;
-}
-.bot-card {
-    background: #e6f0ff !important;
-    color: #002244 !important;
-    border-radius: 15px !important;
-    padding: 20px !important;
-    margin-bottom: 15px !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
-    font-weight: 600 !important;
-}
-</style>
-""", unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #003399;
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    h1 {
+        color: #ff0000;
+        font-weight: bold;
+    }
+    textarea {
+        background-color: #e6f0ff;
+        color: #003399;
+        font-weight: 600;
+    }
+    input[type="text"] {
+        border: 2px solid #ff0000;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 16px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-# --- HEADER ---
-col1, col2 = st.columns([1,6])
-with col1:
-    st.image("ericsson_logo.png", width=80)
-with col2:
-    st.markdown("<h1>💬 ERIBot - Assistant Réseau Ericsson</h1>", unsafe_allow_html=True)
+# --- LOGO ---
+logo = Image.open("ericsson_logo.png")
+st.image(logo, width=150)
 
+st.title("💬 ERIBot - Assistant Réseau Ericsson")
 st.write("Posez-moi une question sur un site radio 👇")
 
-# --- CHARGEMENT CSV ---
 df = pd.read_csv("sites_radio_nabeul.csv")
+
+# Nettoyage et conversion coordonnées
 df['LAT'] = df['LAT'].astype(str).str.replace(',', '.').astype(float)
 df['LONG'] = df['LONG'].astype(str).str.replace(',', '.').astype(float)
+
+# Récupérer la colonne du nom de site (2e colonne)
 site_col = df.columns[1]
 
 # --- EXTRACTION COORDONNEES ---
