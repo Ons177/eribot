@@ -95,18 +95,26 @@ def get_eribot_response(msg):
     msg_lower = msg.lower()
     msg_upper = msg.upper()
 
-    # Liste tous les sites
-    list_keywords = ["tous les sites de nabeul", "liste des sites de nabeul", "afficher tous les sites de nabeul", "les sites de nabeul"]
+    # --- Liste tous les sites ---
+    list_keywords = [
+        "tous les sites de nabeul",
+        "liste des sites de nabeul",
+        "afficher tous les sites de nabeul",
+        "les sites de nabeul"
+    ]
     if any(keyword in msg_lower for keyword in list_keywords):
         all_sites = df[site_col].tolist()
         return "Voici la liste des sites de Nabeul :\n- " + "\n- ".join(all_sites)
 
-    # Recherche par coordonnées
+    # --- Recherche par coordonnées ---
     coord = extraire_coordonnees(msg)
     if coord:
         lat_val, long_val = coord
         tolerance = 1e-4
-        matched_rows = df[((df['LAT'] - lat_val).abs() < tolerance) & ((df['LONG'] - long_val).abs() < tolerance)]
+        matched_rows = df[
+            ((df['LAT'] - lat_val).abs() < tolerance) &
+            ((df['LONG'] - long_val).abs() < tolerance)
+        ]
         if not matched_rows.empty:
             site = matched_rows[site_col].iloc[0]
             return f"Le site correspondant aux coordonnées {lat_val}, {long_val} est : {site}"
@@ -119,14 +127,13 @@ def get_eribot_response(msg):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
             return "\n".join(lines)
 
-    
-    # Recherche par nom de site
+    # --- Recherche par nom de site ---
     matched_sites = [site for site in df[site_col] if site.strip().upper() == msg_upper.strip()]
     if matched_sites:
         site = matched_sites[0]
         site_data = df[df[site_col] == site].iloc[0]
 
-        # Vérification du type de radio demandé
+        # --- Vérification du type de radio demandé ---
         if any(k in msg_lower for k in ["radio type 4g", "type radio 4g"]):
             return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
 
@@ -154,8 +161,9 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-
+    # --- Si aucun site trouvé ---
     return "Désolé, je n'ai pas trouvé de site correspondant. Vérifiez le nom exact ou fournissez les coordonnées"
+
 
 # --- INTERFACE UTILISATEUR ---
 user_input = st.text_input("Votre question")
