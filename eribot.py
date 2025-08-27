@@ -119,35 +119,35 @@ def get_eribot_response(msg):
                 lines.append(f"{i}. {getattr(row, site_col)} (distance = {row.DISTANCE:.5f})")
             return "\n".join(lines)
 
+    
     # Recherche par nom de site
-    
-        # --- Recherche par nom de site (corrigée pour type radio) ---
-matched_sites = [site for site in df[site_col] if site.strip().upper() in msg_upper]
-if matched_sites:
-    site = matched_sites[0]
-    site_data = df[df[site_col] == site].iloc[0]
-    
-    # Vérification du type de radio demandé
-    if any(k in msg_lower for k in ["radio type 4g", "type radio 4g"]):
-        return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
-    elif any(k in msg_lower for k in ["radio type 3g", "type radio 3g"]):
-        return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
-    elif any(k in msg_lower for k in ["oss", "id"]):
-        return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
-    elif any(k in msg_lower for k in ["gps", "coordonnée"]):
-        return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-    elif any(k in msg_lower for k in ["latitude", "lat"]):
-        return f"La latitude du site {site} est : {site_data['LAT']}"
-    elif any(k in msg_lower for k in ["longitude", "long"]):
-        return f"La longitude du site {site} est : {site_data['LONG']}"
-    else:
-        return (
-            f"Voici les infos disponibles pour le site {site} :\n"
-            f"- OSS ID : {site_data['4G OSS ID']}\n"
-            f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
-            f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
-            f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
-        )
+    matched_sites = [site for site in df[site_col] if site.strip().upper() in msg_upper]
+    if matched_sites:
+        site = matched_sites[0]
+        site_data = df[df[site_col] == site].iloc[0]
+        
+        # Vérification du type de radio demandé
+        if any(k in msg_lower for k in ["radio type 4g", "type radio 4g"]):
+            return f"Le type de radio 4G pour {site} est : {site_data['Radio Type 4G']}"
+        elif any(k in msg_lower for k in ["radio type 3g", "type radio 3g"]):
+            return f"Le type de radio 3G pour {site} est : {site_data['Radio Type 3G']}"
+        elif any(k in msg_lower for k in ["oss", "id"]):
+            return f"L’OSS ID du site {site} est : {site_data['4G OSS ID']}"
+        elif any(k in msg_lower for k in ["gps", "coordonnée"]):
+            return f"Coordonnées GPS de {site} : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+        elif any(k in msg_lower for k in ["latitude", "lat"]):
+            return f"La latitude du site {site} est : {site_data['LAT']}"
+        elif any(k in msg_lower for k in ["longitude", "long"]):
+            return f"La longitude du site {site} est : {site_data['LONG']}"
+        else:
+            return (
+                f"Voici les infos disponibles pour le site {site} :\n"
+                f"- OSS ID : {site_data['4G OSS ID']}\n"
+                f"- Radio Type 4G : {site_data['Radio Type 4G']}\n"
+                f"- Radio Type 3G : {site_data['Radio Type 3G']}\n"
+                f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
+            )
+
 
 
     return "Désolé, je n'ai pas trouvé de site correspondant. Vérifiez le nom exact ou fournissez les coordonnées."
