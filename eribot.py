@@ -148,8 +148,6 @@ def get_eribot_response(msg):
                 f"- Coordonnées : LAT = {site_data['LAT']}, LONG = {site_data['LONG']}"
             )
 
-
-
     return "Désolé, je n'ai pas trouvé de site correspondant. Vérifiez le nom exact ou fournissez les coordonnées."
 
 # --- INTERFACE UTILISATEUR ---
