@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from PIL import Image
-import re
+import re 
 
 # --- CONFIG PAGE ---
 st.set_page_config(page_title="ERIBot - Ericsson", page_icon="🚱")
